@@ -251,16 +251,13 @@ describe('ReverseConnectListener', function () {
         }
     });
 
-    it('throws ReverseConnectException when bind fails (port already in use)', function () {
-        $hog = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
-        $addr = stream_socket_get_name($hog, false);
-        [, $port] = explode(':', $addr);
+    it('throws ReverseConnectException when bind fails on an unresolvable host', function () {
+        $listener = new ReverseConnectListener(
+            'not-a-real-host-rc-test.invalid',
+            12345,
+            new ReverseHelloValidator(['urn:x']),
+        );
 
-        $listener = new ReverseConnectListener('127.0.0.1', (int) $port, new ReverseHelloValidator(['urn:x']));
-
-        // Suppress the unsilenceable E_WARNING emitted by stream_socket_server() when
-        // the address is already bound — the test asserts the resulting exception, not
-        // PHP's diagnostic noise.
         set_error_handler(static fn () => true);
 
         try {
@@ -268,7 +265,6 @@ describe('ReverseConnectListener', function () {
                 ->toThrow(ReverseConnectException::class, 'Failed to bind reverse-connect listener');
         } finally {
             restore_error_handler();
-            fclose($hog);
         }
     });
 
