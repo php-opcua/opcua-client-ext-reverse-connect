@@ -1,0 +1,61 @@
+{
+  "name": "php-opcua/opcua-client-ext-reverse-connect",
+  "description": "OPC UA Reverse Connect (ReverseHello) listener for PHP — extends opcua-client, OPC UA Part 6 §7.1.2.3",
+  "homepage": "https://github.com/php-opcua/opcua-client-ext-reverse-connect",
+  "support": {
+    "issues": "https://github.com/php-opcua/opcua-client-ext-reverse-connect/issues",
+    "source": "https://github.com/php-opcua/opcua-client-ext-reverse-connect",
+    "docs": "https://github.com/php-opcua/opcua-client-ext-reverse-connect/docs"
+  },
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Gianfrancesco Aurecchia",
+      "email": "gianfri.aur@gmail.com"
+    }
+  ],
+  "keywords": [
+    "opcua",
+    "opc-ua",
+    "opc ua",
+    "reverse-connect",
+    "reversehello",
+    "edge",
+    "iiot",
+    "nat-traversal",
+    "industrial",
+    "industry-4.0"
+  ],
+  "autoload": {
+    "psr-4": {
+      "PhpOpcua\\Client\\ExtReverseConnect\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PhpOpcua\\Client\\ExtReverseConnect\\Tests\\": "tests/"
+    }
+  },
+  "require": {
+    "php": "^8.2",
+    "php-opcua/opcua-client": "^4.4@dev|dev-master",
+    "psr/log": "^3.0",
+    "psr/event-dispatcher": "^1.0"
+  },
+  "require-dev": {
+    "pestphp/pest": "^3.0",
+    "friendsofphp/php-cs-fixer": "^3.0"
+  },
+  "scripts": {
+    "format": "php-cs-fixer fix --config=.php-cs-fixer.php --allow-risky=yes",
+    "format:check": "php-cs-fixer fix --config=.php-cs-fixer.php --allow-risky=yes --dry-run --diff"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
