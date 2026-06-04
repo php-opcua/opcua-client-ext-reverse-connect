@@ -12,7 +12,7 @@
   "authors": [
     {
       "name": "Gianfrancesco Aurecchia",
-      "email": "gianfri.aur@gmail.com"
+      "email": "gianfri@php-opcua.com"
     }
   ],
   "keywords": [
@@ -39,7 +39,7 @@
   },
   "require": {
     "php": "^8.2",
-    "php-opcua/opcua-client": "^4.4@dev|dev-master",
+    "php-opcua/opcua-client": "^4.4",
     "psr/log": "^3.0",
     "psr/event-dispatcher": "^1.0"
   },
