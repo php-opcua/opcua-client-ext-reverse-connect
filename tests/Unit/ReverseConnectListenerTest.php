@@ -251,6 +251,23 @@ describe('ReverseConnectListener', function () {
         }
     });
 
+    it('throws ReverseHelloParseException when the peer stalls and the frame read times out', function () {
+        $listener = new ReverseConnectListener('127.0.0.1', 0, new ReverseHelloValidator(['urn:x']));
+        $listener->listen();
+        // Announce a 100-byte frame, send only the 8-byte header, then stay
+        // connected and silent so the body read hits the socket timeout.
+        $partial = 'RHE' . 'F' . pack('V', 100);
+        $client = rcDial($listener, $partial);
+
+        try {
+            expect(fn () => $listener->accept(1.0))
+                ->toThrow(ReverseHelloParseException::class, 'Timeout while reading ReverseHello frame');
+        } finally {
+            fclose($client);
+            $listener->close();
+        }
+    });
+
     it('throws ReverseConnectException when bind fails on an unresolvable host', function () {
         $listener = new ReverseConnectListener(
             'not-a-real-host-rc-test.invalid',

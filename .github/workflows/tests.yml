@@ -94,7 +94,7 @@ jobs:
         working-directory: opcua-client-ext-reverse-connect
         env:
           OPCUA_CERTS_DIR: ${{ steps.opcua.outputs.certs-dir }}
-        run: vendor/bin/pest --group=integration --log-junit=results/junit.xml ${{ matrix.php-version == '8.5' && '--coverage-clover=coverage/clover.xml' || '' }}
+        run: vendor/bin/pest ${{ matrix.php-version == '8.5' && '--coverage-clover=coverage/clover.xml' || '--group=integration' }} --log-junit=results/junit.xml
 
       - name: Upload coverage to Codecov
         if: matrix.php-version == '8.5'
