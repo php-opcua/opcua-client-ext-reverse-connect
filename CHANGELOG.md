@@ -1,9 +1,14 @@
 # Changelog
 
-## [v4.4.0] - TBD
+## [v4.4.0] - 2026-06-05
 
 - Requires `php-opcua/opcua-client` ^4.4 (uses `TcpTransport::fromConnectedSocket()` and the matching `ManagesConnectionTrait::performConnect()` skip — both added in core v4.4.0)
-- Requires `php-opcua/uanetstandard-test-suite` v1.4.0+ for the integration suite (the `TestServer/ReverseConnect/StartReverseConnect` / `StopReverseConnect` Method nodes used to trigger the server-side outbound dial)
+- Requires `php-opcua/uanetstandard-test-suite` v1.5.1+ for the integration suite (the `TestServer/ReverseConnect/StartReverseConnect` / `StopReverseConnect` Method nodes used to trigger the server-side outbound dial); v1.5.1+ recommended for the readiness-gated healthcheck (see _Integration suite hardening_ below)
+
+### Fixed — Integration suite hardening (CI)
+
+- **Factory end-to-end test now binds `0.0.0.0:0`** (was `127.0.0.1:0`), matching the accept/reject tests. In CI the server runs in a container and dials the listener via `host.docker.internal`, which `host-gateway` maps to the Docker bridge gateway IP — a loopback-bound listener is unreachable from inside the container, so the inbound ReverseHello never arrived and the test hit the 20s `accept()` timeout.
+- **`rcConnectTriggerClient()` now retries the trigger `connect()` for up to 15s**, absorbing the transient `BadServerHalted` (`0x800E0000`) ServiceFault / `ConnectionException` a freshly booted UA-.NETStandard server returns before its `ServerInternal` reaches the Running state. Belt-and-suspenders with the v1.5.1 test-suite healthcheck that now gates `docker compose --wait` on a real readiness marker. Locally the server is already running, so this race only surfaced in CI.
 
 First public release. Ships the OPC UA Reverse Connect (ReverseHello) listener as an optional extension of [`php-opcua/opcua-client`](https://github.com/php-opcua/opcua-client) — implementing the client-side half of OPC UA Part 6 §7.1.2.3. The core `opcua-client` only exposes the `TcpTransport::fromConnectedSocket()` seam; everything else (listener, parser, whitelist, bridge, events, exceptions) lives here under the `PhpOpcua\Client\ExtReverseConnect\*` namespace. Applications that do not need Reverse Connect take no extra dependency.
 

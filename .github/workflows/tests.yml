@@ -88,7 +88,7 @@ jobs:
 
       - name: Start OPC UA test servers
         id: opcua
-        uses: php-opcua/uanetstandard-test-suite@v1.5.0
+        uses: php-opcua/uanetstandard-test-suite@v1.5.1
 
       - name: Run integration tests
         working-directory: opcua-client-ext-reverse-connect

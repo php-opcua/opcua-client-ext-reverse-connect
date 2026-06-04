@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use PhpOpcua\Client\Client;
 use PhpOpcua\Client\ClientBuilder;
+use PhpOpcua\Client\Exception\ConnectionException;
+use PhpOpcua\Client\Exception\ServiceException;
 use PhpOpcua\Client\ExtReverseConnect\Event\ReverseConnectAccepted;
 use PhpOpcua\Client\ExtReverseConnect\Event\ReverseHelloReceived;
 use PhpOpcua\Client\ExtReverseConnect\Exception\ReverseConnectRejectedException;
@@ -25,7 +27,8 @@ use PhpOpcua\Client\Types\Variant;
  * via the uanetstandard-test-suite container (opcua-no-security, port 4840).
  *
  * Each test:
- *   1. Opens a local listener on 127.0.0.1:0 (kernel-assigned port).
+ *   1. Opens a local listener on 0.0.0.0:0 (kernel-assigned port) so the
+ *      server can reach it via host.docker.internal from inside its container.
  *   2. Connects normally to the server (no security).
  *   3. Calls TestServer/ReverseConnect/StartReverseConnect(host, port).
  *   4. Awaits the inbound RHE on the listener.
@@ -39,12 +42,32 @@ const RC_ENDPOINT = 'opc.tcp://localhost:4840/UA/TestServer';
 
 const RC_EXPECTED_SERVER_URI = 'urn:opcua:testserver:nodes';
 
+/**
+ * Connect to the trigger server, retrying through the server's boot window.
+ *
+ * A freshly started UA-.NETStandard server briefly answers with a top-level
+ * ServiceFault BadServerHalted (0x800E0000) — or refuses the TCP connection —
+ * until its `ServerInternal` reaches the Running state. The test-suite
+ * healthcheck gates on a readiness marker, but we retry here as well so the
+ * integration suite never flakes on the startup race.
+ */
 function rcConnectTriggerClient(): Client
 {
-    return (new ClientBuilder())
-        ->setSecurityPolicy(SecurityPolicy::None)
-        ->setSecurityMode(SecurityMode::None)
-        ->connect(RC_ENDPOINT);
+    $deadline = microtime(true) + 15.0;
+    $lastError = null;
+    do {
+        try {
+            return (new ClientBuilder())
+                ->setSecurityPolicy(SecurityPolicy::None)
+                ->setSecurityMode(SecurityMode::None)
+                ->connect(RC_ENDPOINT);
+        } catch (ServiceException|ConnectionException $e) {
+            $lastError = $e;
+            usleep(250_000);
+        }
+    } while (microtime(true) < $deadline);
+
+    throw $lastError;
 }
 
 function rcBrowseToNode(Client $client, array $path): NodeId
@@ -225,7 +248,10 @@ describe('Reverse Connect end-to-end against UA-.NETStandard', function () {
 
     it('hands a fully connected Client to the caller via the factory', function () {
         $validator = new ReverseHelloValidator([RC_EXPECTED_SERVER_URI]);
-        $listener = new ReverseConnectListener('127.0.0.1', 0, $validator);
+        // Bind 0.0.0.0 (not loopback): in CI the server dials the listener via
+        // host.docker.internal, which maps to the Docker bridge gateway IP — a
+        // 127.0.0.1-bound listener is unreachable from inside the container.
+        $listener = new ReverseConnectListener('0.0.0.0', 0, $validator);
         $listener->listen();
         [, $port] = explode(':', $listener->getBindAddress());
         $port = (int) $port;
